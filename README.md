@@ -24,7 +24,7 @@ print movie.to_json()
 
 the output would be 
 
-'''json
+```json
 {
     "Actors": [
         "Leonardo DiCaprio", 
@@ -59,7 +59,7 @@ the output would be
         "James Cameron"
     ]
 }
-'''
+```
 
 ### Known Issues
 Any field containing "Domestic Total Gross" as a key is redundant, as the "Domestic" field contains the correct domestic
