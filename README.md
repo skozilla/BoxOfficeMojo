@@ -24,7 +24,7 @@ print movie.to_json()
 
 the output would be 
 
-'''
+'''json
 {
     "Actors": [
         "Leonardo DiCaprio", 
