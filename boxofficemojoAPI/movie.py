@@ -42,12 +42,19 @@ class Movie(object):
 
     def extract_data(self):
         """Extract all the relevant information from the html file"""
-        title = str(self.soup.title.contents[0])
+        title = self.soup.title.contents[0].encode('utf8')
         self.Data["Title"] = title.replace(" - Box Office Mojo", "")
         try:
             center = self.soup.findAll("center")
 
+            if len(center) == 0:
+                pass
+
             table = center[0].find("table")
+
+            if len(center) is None:
+                pass
+
             rows = table.findAll('tr')
             for tr in rows:
                 cols = tr.findAll('td')
@@ -104,8 +111,10 @@ class Movie(object):
         self._convert_financial_field("Production Budget")
         #self._convert_date_field("Release Date")
         self._convert_runtime_field("Runtime")
-
-        pass
+        for key, value in self.Data.iteritems():
+            if "Total Gross" in key:
+                self.Data.pop(key)
+                break
 
     @utils.na_or_empty
     def _convert_financial_field(self, key):

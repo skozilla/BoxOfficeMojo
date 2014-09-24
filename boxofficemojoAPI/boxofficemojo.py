@@ -4,6 +4,7 @@ import bs4
 import re
 import requests
 import movie
+import utils
 
 BOMURL = "http://www.boxofficemojo.com"
 
@@ -56,7 +57,7 @@ class BoxOfficeMojo(object):
             url = BOMURL + "/movies/alphabetical.htm?letter=" + letter
             r = requests.get(url)
             if r.status_code != 200:
-                print r.status_code
+                print "HTTP Status code returned:", r.status_code
             soup = bs4.BeautifulSoup(r.content)
             self.clean_html(soup)
             num_pages = self.find_number_of_pages(soup)
@@ -65,13 +66,29 @@ class BoxOfficeMojo(object):
                 new_url = url + "&page=" + str(num)
                 r = requests.get(new_url)
                 if r.status_code != 200:
-                    print r.status_code
+                    print "HTTP Status code returned:", r.status_code
                 soup = bs4.BeautifulSoup(r.content)
                 self.clean_html(soup)
                 self.find_urls_in_html(soup)
 
-    def get_movie_details(self, url):
-        r = requests.get(url)
-        soup = bs4.BeautifulSoup(r.content)
-        return movie.Movie(soup)
+    @utils.catch_connection_error
+    def get_movie_details(self, url_or_name):
+        if 'http' in url_or_name.lower():
+            url = url_or_name
+            r = requests.get(url)
+            soup = bs4.BeautifulSoup(r.content)
+            return movie.Movie(soup)
+        elif url_or_name in self.movie_urls.keys():
+            url = self.movie_urls[url_or_name]
+            r = requests.get(url)
+            soup = bs4.BeautifulSoup(r.content)
+            return movie.Movie(soup)
+        else:
+            print "Invalid movie name or URL ", url_or_name
+
+    def get_all_movies(self):
+        for key, val in self.movie_urls.iteritems():
+            movie = self.get_movie_details(val)
+            movie.clean_data()
+            print movie.to_json()
 
