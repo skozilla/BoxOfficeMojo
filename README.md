@@ -42,8 +42,7 @@ the output would be
         "James Cameron"
     ], 
     "Distributor": "Paramount", 
-    "Domestic": 658672302.0, 
-    "Domestic Total Gross": "$600,788,188Domestic Lifetime Gross", 
+    "Domestic": 658672302.0,  
     "Foreign": 1528100000.0, 
     "Genre": "Romance", 
     "MPAA Rating": "PG-13", 
@@ -62,5 +61,5 @@ the output would be
 ```
 
 ### Known Issues
-Any field containing "Domestic Total Gross" as a key is redundant, as the "Domestic" field contains the correct domestic
-earnings of the movie. I will fix this later
+
+This library is not compatible with python 3.x
