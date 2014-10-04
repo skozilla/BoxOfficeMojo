@@ -6,39 +6,16 @@ import json
 import time
 
 from . import utils
+from base import MovieBase
 
 
-class Movie(object):
+class Movie(MovieBase):
     def __init__(self, html_soup):
         """Movie class which parses html BeautifulSoup object and extracts information about the movie"""
 
         self.Data = {}
 
-        assert isinstance(html_soup, bs4.BeautifulSoup)
-        self.soup = html_soup
-
-        self.clean_html()
-        self.extract_data()
-
-    def clean_html(self):
-        """Get rid of all bold, italic, underline, link tags, script tag, img tag, etc"""
-        invalid_tags = ['a', 'b', 'i', 'u', 'nobr', 'font']
-        for tag in invalid_tags:
-            for match in self.soup.findAll(tag):
-                match.replaceWithChildren()
-
-        # delete all contents in script and img tags
-        [x.extract() for x in self.soup.findAll('script')]
-        [x.extract() for x in self.soup.findAll('img')]
-        [x.extract() for x in self.soup.findAll('br')]
-        [x.extract() for x in self.soup.findAll('div', id='hp_banner')]
-        [x.extract() for x in self.soup.findAll('ul', id='leftnav')]
-
-    def print_to_file(self, file_name):
-        """"Print a pretty and clean html string to a file"""
-        f = open(file_name, 'w')
-        f.write(self.soup.prettify().encode('utf8'))
-        f.close()
+        MovieBase.__init__(self, html_soup)
 
     def extract_data(self):
         """Extract all the relevant information from the html file"""
@@ -105,45 +82,91 @@ class Movie(object):
 
     def clean_data(self):
         """Formats all the extracted data into the appropriate types"""
-        self._convert_financial_field("Domestic")
-        self._convert_financial_field("Worldwide")
-        self._convert_financial_field("Foreign")
-        self._convert_financial_field("Production Budget")
-        #self._convert_date_field("Release Date")
-        self._convert_runtime_field("Runtime")
+        utils.convert_financial_field(self.Data, "Domestic")
+        utils.convert_financial_field(self.Data, "Worldwide")
+        utils.convert_financial_field(self.Data, "Foreign")
+        utils.convert_financial_field(self.Data, "Production Budget")
+        #utils.convert_date_field(self.Data, "Release Date")
+        utils.convert_runtime_field(self.Data, "Runtime")
+
         for key, value in self.Data.iteritems():
             if "Total Gross" in key:
                 self.Data.pop(key)
                 break
 
-    @utils.na_or_empty
-    def _convert_financial_field(self, key):
-        """Formats financial values in the Data dictionary"""
-        if key == "Production Budget":
-            digits = re.findall(r'\$([\d\.\d]+)', self.Data[key])
-            digits = float(digits[0])
-            if 'million' in self.Data[key]:
-                self.Data[key] = digits*1000000.0
-            elif 'thousand' in self.Data[key]:
-                self.Data[key] = digits*1000.0
-            else:
-                self.Data[key] = digits
-        else:
-            self.Data[key] = float(self.Data[key])
+    def to_json(self):
+        """Returns a JSON string of the Data member"""
+        return json.dumps(self.Data, indent=4, sort_keys=True)
 
-    @utils.na_or_empty
-    def _convert_date_field(self, key):
-        """Formats date values in the Data dictionary"""
-        self.Data[key] = time.strptime(self.Data[key], "%B %d, %Y")
 
-    @utils.na_or_empty
-    def _convert_runtime_field(self, key):
-        """Formats date values in the Data dictionary"""
-        m = re.match(r"^((\d*) hrs\. )?(\d*)", self.Data[key])
-        if m.group(2) is None:
-            self.Data[key] = int(m.group(3))
-        else:
-            self.Data[key] = int(m.group(2))*60 + int(m.group(3))
+class Weekly(MovieBase):
+    def __init__(self, html_soup):
+        """Movie class which parses html BeautifulSoup object and extracts information about the movie"""
+
+        self.Data = {}
+
+        MovieBase.__init__(self, html_soup)
+
+    def extract_data(self):
+        """Extract all the relevant information from the html file"""
+        title = self.soup.title.contents[0].encode('utf8')
+        self.Data["Title"] = title.replace(" - Weekly Box Office Results - Box Office Mojo", "")
+        try:
+            center = self.soup.findAll("center")
+
+            x = center[1].contents[0::2]
+            years = [year.encode('utf-8') for year in x]
+
+            tables = self.soup.find_all("table", "chart-wide")
+
+            results_collection = []
+            year = 0
+            if len(tables) == 0:
+                self.Data["Weekly"] = None
+                pass
+
+            for table in tables:
+                rows = table.findAll("tr")
+                del(rows[0])
+
+                for tr in rows:
+                    results_week = {}
+                    cols = tr.findAll("td")
+                    results_week["Week"] = re.sub(ur'(\u2013|\u0096)[\s\w\s]+', '', cols[0].renderContents().decode("utf-8")) + ", " + years[year]
+                    results_week["Rank"] = cols[1].renderContents()
+                    results_week["Gross"] = cols[2].renderContents()
+                    results_week["Week Over Week Change"] = cols[3].renderContents()
+                    results_week["Theaters"] = cols[4].renderContents()
+                    results_week["Theatre Change"] = cols[5].renderContents()
+                    results_week["Average Per Theatre"] = cols[6].renderContents()
+                    results_week["Gross To Date"] = cols[7].renderContents()
+                    results_week["Week Number"] = cols[8].renderContents()
+                    results_collection.append(results_week)
+                year += 1
+
+            self.Data["Weekly"] = results_collection
+        except:
+            print "Error parsing movie: ", title
+            raise
+
+    def clean_data(self):
+        """Formats all the extracted data into the appropriate types"""
+
+        for results in self.Data["Weekly"]:
+            utils.convert_financial_field(results, "Average Per Theatre")
+            utils.convert_financial_field(results, "Gross")
+            utils.convert_financial_field(results, "Gross To Date")
+            utils.convert_percent_field(results, "Week Over Week Change")
+            #utils.convert_date_field(results, "Week")
+            utils.convert_int_field(results, "Rank")
+            utils.convert_int_field(results, "Theaters")
+            utils.convert_int_field(results, "Theatre Change")
+            utils.convert_int_field(results, "Week Number")
+
+        for key, value in self.Data.iteritems():
+            if "Total Gross" in key:
+                self.Data.pop(key)
+                break
 
     def to_json(self):
         """Returns a JSON string of the Data member"""

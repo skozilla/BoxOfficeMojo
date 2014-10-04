@@ -6,10 +6,11 @@ import requests
 import movie
 import utils
 
-BOMURL = "http://www.boxofficemojo.com"
 
 class BoxOfficeMojo(object):
     """API client object for interacting with BoxOfficeMojo website"""
+
+    BOMURL = "http://www.boxofficemojo.com/movies"
 
     def __init__(self):
         self.letters = ['NUM']
@@ -48,13 +49,16 @@ class BoxOfficeMojo(object):
             while movie_name in self.movie_urls.keys():
                 movie_name = url.renderContents() + '(' + str(suffix) + ')'
                 suffix += 1
-            self.movie_urls[movie_name] = BOMURL + url["href"]
+            #save only the movie ids
+            a = re.findall(r'(id=(\w|[-(),\':\s.])+).htm', url["href"])
+            if len(a) == 1:
+                self.movie_urls[movie_name] = a[0][0]
 
     def crawl_for_urls(self):
         """Gets all the movie urls and puts them in a dictionary"""
         for letter in self.letters:
             print 'Processing letter: ' + letter
-            url = BOMURL + "/movies/alphabetical.htm?letter=" + letter
+            url = self.BOMURL + "/alphabetical.htm?letter=" + letter
             r = requests.get(url)
             if r.status_code != 200:
                 print "HTTP Status code returned:", r.status_code
@@ -72,17 +76,32 @@ class BoxOfficeMojo(object):
                 self.find_urls_in_html(soup)
 
     @utils.catch_connection_error
-    def get_movie_details(self, url_or_name):
+    def get_movie_summary(self, url_or_name):
         if 'http' in url_or_name.lower():
             url = url_or_name
             r = requests.get(url)
             soup = bs4.BeautifulSoup(r.content)
             return movie.Movie(soup)
         elif url_or_name in self.movie_urls.keys():
-            url = self.movie_urls[url_or_name]
+            url = self.BOMURL + "/?page=main&" + self.movie_urls[url_or_name] + ".htm"
             r = requests.get(url)
             soup = bs4.BeautifulSoup(r.content)
             return movie.Movie(soup)
+        else:
+            print "Invalid movie name or URL ", url_or_name
+
+    @utils.catch_connection_error
+    def get_weekly_summary(self, url_or_name):
+        if 'http' in url_or_name.lower():
+            url = url_or_name
+            r = requests.get(url)
+            soup = bs4.BeautifulSoup(r.content)
+            return movie.Weekly(soup)
+        elif url_or_name in self.movie_urls.keys():
+            url = self.BOMURL + "/?page=weekly&" + self.movie_urls[url_or_name] + ".htm"
+            r = requests.get(url)
+            soup = bs4.BeautifulSoup(r.content)
+            return movie.Weekly(soup)
         else:
             print "Invalid movie name or URL ", url_or_name
 
