@@ -4,6 +4,7 @@ import decorator
 import requests.exceptions
 import time
 import re
+from datetime import  datetime
 
 
 
@@ -60,7 +61,7 @@ def convert_financial_field(data, key):
 @na_or_empty
 def convert_date_field(data, key):
     """Formats date values in the Data dictionary"""
-    data[key] = time.strptime(data[key], "%B %d, %Y")
+    data[key] = datetime.fromtimestamp(time.mktime(time.strptime(data[key], "%B %d, %Y")))
 
 
 @na_or_empty

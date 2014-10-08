@@ -3,7 +3,7 @@ __author__ = 'rastko'
 import bs4
 import re
 import json
-import time
+from bson import json_util
 
 from . import utils
 from base import MovieBase
@@ -86,7 +86,7 @@ class Movie(MovieBase):
         utils.convert_financial_field(self.Data, "Worldwide")
         utils.convert_financial_field(self.Data, "Foreign")
         utils.convert_financial_field(self.Data, "Production Budget")
-        #utils.convert_date_field(self.Data, "Release Date")
+        utils.convert_date_field(self.Data, "Release Date")
         utils.convert_runtime_field(self.Data, "Runtime")
 
         for key, value in self.Data.iteritems():
@@ -96,7 +96,7 @@ class Movie(MovieBase):
 
     def to_json(self):
         """Returns a JSON string of the Data member"""
-        return json.dumps(self.Data, indent=4, sort_keys=True)
+        return json.dumps(self.Data, indent=4, sort_keys=True, default=json_util.default)
 
 
 class Weekly(MovieBase):
@@ -157,7 +157,7 @@ class Weekly(MovieBase):
             utils.convert_financial_field(results, "Gross")
             utils.convert_financial_field(results, "Gross To Date")
             utils.convert_percent_field(results, "Week Over Week Change")
-            #utils.convert_date_field(results, "Week")
+            utils.convert_date_field(results, "Week")
             utils.convert_int_field(results, "Rank")
             utils.convert_int_field(results, "Theaters")
             utils.convert_int_field(results, "Theatre Change")
