@@ -4,6 +4,7 @@ import decorator
 import requests.exceptions
 import time
 import re
+import inflection
 from datetime import  datetime
 
 
@@ -61,8 +62,12 @@ def convert_financial_field(data, key):
 @na_or_empty
 def convert_date_field(data, key):
     """Formats date values in the Data dictionary"""
-    data[key] = datetime.fromtimestamp(time.mktime(time.strptime(data[key], "%B %d, %Y")))
-
+    try:
+        data[key] = datetime.fromtimestamp(time.mktime(time.strptime(data[key], "%B %d, %Y")))
+    except ValueError:
+        data[key] = datetime.fromtimestamp(time.mktime(time.strptime(data[key], "%b %d, %Y")))
+    except:
+        raise
 
 @na_or_empty
 def convert_runtime_field(data, key):
@@ -85,3 +90,18 @@ def convert_percent_field(data, key):
     """Formats integer values in the Data dictionary"""
     data[key] = re.sub(r'[(%|,)]', '', data[key])
     data[key] = float(data[key])*0.01
+
+
+def standardize_keys(obj):
+    if isinstance(obj, list):
+        for element in obj:
+            standardize_keys(element)
+    elif isinstance(obj, dict):
+        temp = []
+        for key, val in obj.iteritems():
+            standardize_keys(val)
+            temp.append(key)
+        for key in temp:
+            obj[inflection.underscore(key.replace(" ", ""))] = obj.pop(key)
+    else:
+        pass

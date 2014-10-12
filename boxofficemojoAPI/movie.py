@@ -13,14 +13,12 @@ class Movie(MovieBase):
     def __init__(self, html_soup):
         """Movie class which parses html BeautifulSoup object and extracts information about the movie"""
 
-        self.Data = {}
-
         MovieBase.__init__(self, html_soup)
 
     def extract_data(self):
         """Extract all the relevant information from the html file"""
         title = self.soup.title.contents[0].encode('utf8')
-        self.Data["Title"] = title.replace(" - Box Office Mojo", "")
+        self.data["Title"] = title.replace(" - Box Office Mojo", "")
         try:
             center = self.soup.findAll("center")
 
@@ -40,7 +38,7 @@ class Movie(MovieBase):
                     keyval = con.split(":")
                     key = keyval[0]
                     val = keyval[1].strip()
-                    self.Data[key] = val
+                    self.data[key] = val
 
             tables = self.soup.find_all("div", "mp_box")
 
@@ -55,7 +53,7 @@ class Movie(MovieBase):
                             contents = [re.sub(r'[(\xc2|\xa0|+|=|:|$|,)]', '', a.renderContents()) for a in cols]
                             key = contents[0]
                             val = contents[1]
-                            self.Data[key] = val
+                            self.data[key] = val
 
                 elif box_table_name == "Domestic Summary":
                     pass
@@ -72,7 +70,7 @@ class Movie(MovieBase):
                             key = key.replace(':', '')
                             if key[-1] != 's':
                                 key += 's'
-                            self.Data[key] = [re.sub('\*+\s*$', '', child.encode('utf-8')) for child in val.children
+                            self.data[key] = [re.sub('\*+\s*$', '', child.encode('utf-8')) for child in val.children
                                               if re.search(exclude_pattern, child) is None]
                 else:
                     pass
@@ -82,35 +80,30 @@ class Movie(MovieBase):
 
     def clean_data(self):
         """Formats all the extracted data into the appropriate types"""
-        utils.convert_financial_field(self.Data, "Domestic")
-        utils.convert_financial_field(self.Data, "Worldwide")
-        utils.convert_financial_field(self.Data, "Foreign")
-        utils.convert_financial_field(self.Data, "Production Budget")
-        utils.convert_date_field(self.Data, "Release Date")
-        utils.convert_runtime_field(self.Data, "Runtime")
+        utils.convert_financial_field(self.data, "Domestic")
+        utils.convert_financial_field(self.data, "Worldwide")
+        utils.convert_financial_field(self.data, "Foreign")
+        utils.convert_financial_field(self.data, "Production Budget")
+        utils.convert_date_field(self.data, "Release Date")
+        utils.convert_runtime_field(self.data, "Runtime")
 
-        for key, value in self.Data.iteritems():
+        for key, value in self.data.iteritems():
             if "Total Gross" in key:
-                self.Data.pop(key)
+                self.data.pop(key)
                 break
 
-    def to_json(self):
-        """Returns a JSON string of the Data member"""
-        return json.dumps(self.Data, indent=4, sort_keys=True, default=json_util.default)
 
 
 class Weekly(MovieBase):
     def __init__(self, html_soup):
         """Movie class which parses html BeautifulSoup object and extracts information about the movie"""
 
-        self.Data = {}
-
         MovieBase.__init__(self, html_soup)
 
     def extract_data(self):
         """Extract all the relevant information from the html file"""
         title = self.soup.title.contents[0].encode('utf8')
-        self.Data["Title"] = title.replace(" - Weekly Box Office Results - Box Office Mojo", "")
+        self.data["Title"] = title.replace(" - Weekly Box Office Results - Box Office Mojo", "")
         try:
             center = self.soup.findAll("center")
 
@@ -122,7 +115,7 @@ class Weekly(MovieBase):
             results_collection = []
             year = 0
             if len(tables) == 0:
-                self.Data["Weekly"] = None
+                self.data["Weekly"] = None
                 pass
 
             for table in tables:
@@ -144,7 +137,7 @@ class Weekly(MovieBase):
                     results_collection.append(results_week)
                 year += 1
 
-            self.Data["Weekly"] = results_collection
+            self.data["Weekly"] = results_collection
         except:
             print "Error parsing movie: ", title
             raise
@@ -152,7 +145,7 @@ class Weekly(MovieBase):
     def clean_data(self):
         """Formats all the extracted data into the appropriate types"""
 
-        for results in self.Data["Weekly"]:
+        for results in self.data["Weekly"]:
             utils.convert_financial_field(results, "Average Per Theatre")
             utils.convert_financial_field(results, "Gross")
             utils.convert_financial_field(results, "Gross To Date")
@@ -163,11 +156,9 @@ class Weekly(MovieBase):
             utils.convert_int_field(results, "Theatre Change")
             utils.convert_int_field(results, "Week Number")
 
-        for key, value in self.Data.iteritems():
+        for key, value in self.data.iteritems():
             if "Total Gross" in key:
-                self.Data.pop(key)
+                self.data.pop(key)
                 break
 
-    def to_json(self):
-        """Returns a JSON string of the Data member"""
-        return json.dumps(self.Data, indent=4, sort_keys=True)
+        utils.standardize_keys(self.data)

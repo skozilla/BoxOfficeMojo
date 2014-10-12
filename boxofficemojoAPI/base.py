@@ -1,13 +1,15 @@
 __author__ = 'rastko'
 
 import bs4
-
+import json
+from bson import json_util
 
 class MovieBase(object):
 
     def __init__(self, html_soup):
         """Movie class which parses html BeautifulSoup object and extracts information about the movie"""
 
+        self.data = {}
         assert isinstance(html_soup, bs4.BeautifulSoup)
         self.soup = html_soup
 
@@ -36,3 +38,10 @@ class MovieBase(object):
 
     def extract_data(self):
         pass
+
+    def clean_data(self):
+        pass
+
+    def to_json(self):
+        """Returns a JSON string of the Data member"""
+        return json.dumps(self.data, indent=4, sort_keys=True, default=json_util.default)
