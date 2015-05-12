@@ -6,7 +6,7 @@ A simple python module for scrapping movie information from www.boxofficemojo.co
 The module is used to extract information for any movie in the www.boxofficemojo.com domain. The information that it obtains
 includes financial information (domestic gross, foreign gross, budget), cast, directors, composers, runtime, raiting, etc.. 
 It could also be used to get the weekly performance of the movie in the box office. 
-Not all the information is present on their website, so it gets what it can. 
+Not all the information is present on the website, so it gets whatever is available. 
 
 Feel free to make suggestions about the code or the functionality, as they would be greatly appreciated. Contributions are welcome. 
 
@@ -19,11 +19,11 @@ box_office_mojo = bom.BoxOfficeMojo()
 box_office_mojo.crawl_for_urls()
 
 
-movie = box_office_mojo.get_movie_summary("Titanic")
+movie = box_office_mojo.get_movie_summary("titanic")
 movie.clean_data()
 print movie.to_json()
 
-weekly = box_office_mojo.get_weekly_summary("Titanic")
+weekly = box_office_mojo.get_weekly_summary("titanic")
 weekly.clean_data()
 print weekly.to_json()
 

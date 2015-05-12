@@ -1,4 +1,4 @@
-Copyright 2014 Rastko Anicic, https://github.com/skozilla
+Copyright 2015 Rastko Anicic, https://github.com/skozilla
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
