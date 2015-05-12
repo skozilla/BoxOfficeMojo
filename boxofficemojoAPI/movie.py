@@ -94,7 +94,6 @@ class Movie(MovieBase):
         utils.standardize_keys(self.data)
 
 
-
 class Weekly(MovieBase):
     def __init__(self, html_soup):
         """Movie class which parses html BeautifulSoup object and extracts information about the movie"""

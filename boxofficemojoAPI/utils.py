@@ -9,7 +9,6 @@ import bs4
 from datetime import  datetime
 
 
-
 @decorator.decorator
 def na_or_empty(func, *args):
     """Decorator for handling conversion of the Movie.Data member"""
@@ -26,6 +25,7 @@ def na_or_empty(func, *args):
     except:
         print "Error cleaning: ", key
         raise
+
 
 @decorator.decorator
 def catch_connection_error(func, *args):
