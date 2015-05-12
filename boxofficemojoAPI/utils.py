@@ -5,6 +5,7 @@ import requests.exceptions
 import time
 import re
 import inflection
+import bs4
 from datetime import  datetime
 
 
@@ -63,11 +64,14 @@ def convert_financial_field(data, key):
 def convert_date_field(data, key):
     """Formats date values in the Data dictionary"""
     try:
-        data[key] = datetime.fromtimestamp(time.mktime(time.strptime(data[key], "%B %d, %Y")))
+        if len(re.findall(r'^(\w{3}) ', data[key])) == 0:
+            data[key] = datetime.fromtimestamp(time.mktime(time.strptime(data[key], "%B %d, %Y")))
+        else:
+            data[key] = datetime.fromtimestamp(time.mktime(time.strptime(data[key], "%b %d, %Y")))
     except ValueError:
-        data[key] = datetime.fromtimestamp(time.mktime(time.strptime(data[key], "%b %d, %Y")))
-    except:
-        raise
+        data[key] = None
+        pass
+
 
 @na_or_empty
 def convert_runtime_field(data, key):
@@ -105,3 +109,11 @@ def standardize_keys(obj):
             obj[inflection.underscore(key.replace(" ", ""))] = obj.pop(key)
     else:
         pass
+
+
+def get_soup(url):
+    r = requests.get(url)
+    if r.status_code == 200:
+        return bs4.BeautifulSoup(r.content)
+    else:
+        return None

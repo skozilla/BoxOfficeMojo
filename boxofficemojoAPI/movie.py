@@ -88,9 +88,10 @@ class Movie(MovieBase):
         utils.convert_runtime_field(self.data, "Runtime")
 
         for key, value in self.data.iteritems():
-            if "Total Gross" in key:
+            if "Total Gross" in key or "." in key:
                 self.data.pop(key)
                 break
+        utils.standardize_keys(self.data)
 
 
 
@@ -157,8 +158,7 @@ class Weekly(MovieBase):
             utils.convert_int_field(results, "Week Number")
 
         for key, value in self.data.iteritems():
-            if "Total Gross" in key:
+            if "Total Gross" in key or "." in key:
                 self.data.pop(key)
                 break
-
         utils.standardize_keys(self.data)

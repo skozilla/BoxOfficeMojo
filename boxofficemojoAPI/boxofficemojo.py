@@ -50,9 +50,9 @@ class BoxOfficeMojo(object):
                 movie_name = url.renderContents() + '(' + str(suffix) + ')'
                 suffix += 1
             #save only the movie ids
-            a = re.findall(r'(id=(\w|[-(),\':\s.])+).htm', url["href"])
+            a = re.findall(r'id=((\w|[-(),\':\s.])+).htm', url["href"])
             if len(a) == 1:
-                self.movie_urls[movie_name] = a[0][0]
+                self.movie_urls[a[0][0]] = movie_name
 
     def crawl_for_urls(self):
         """Gets all the movie urls and puts them in a dictionary"""
@@ -76,38 +76,48 @@ class BoxOfficeMojo(object):
                 self.find_urls_in_html(soup)
 
     @utils.catch_connection_error
-    def get_movie_summary(self, url_or_name):
-        if 'http' in url_or_name.lower():
-            url = url_or_name
-            r = requests.get(url)
-            soup = bs4.BeautifulSoup(r.content)
-            return movie.Movie(soup)
-        elif url_or_name in self.movie_urls.keys():
-            url = self.BOMURL + "/?page=main&" + self.movie_urls[url_or_name] + ".htm"
-            r = requests.get(url)
-            soup = bs4.BeautifulSoup(r.content)
-            return movie.Movie(soup)
+    def get_movie_summary(self, url_or_id):
+        if 'http' in url_or_id.lower():
+            soup = utils.get_soup(url_or_id)
+            if soup is not None:
+                return movie.Movie(soup)
+            else:
+                print "Not able to parse url: " + url_or_id
+                pass
+        elif url_or_id in self.movie_urls.keys():
+            url = self.BOMURL + "/?page=main&id=" + url_or_id + ".htm"
+            soup = utils.get_soup(url)
+            if soup is not None:
+                return movie.Movie(soup)
+            else:
+                print "Not able to parse url: " + url
+                pass
         else:
-            print "Invalid movie name or URL ", url_or_name
+            print "Invalid movie name or URL ", url_or_id
 
     @utils.catch_connection_error
-    def get_weekly_summary(self, url_or_name):
-        if 'http' in url_or_name.lower():
-            url = url_or_name
-            r = requests.get(url)
-            soup = bs4.BeautifulSoup(r.content)
-            return movie.Weekly(soup)
-        elif url_or_name in self.movie_urls.keys():
-            url = self.BOMURL + "/?page=weekly&" + self.movie_urls[url_or_name] + ".htm"
-            r = requests.get(url)
-            soup = bs4.BeautifulSoup(r.content)
-            return movie.Weekly(soup)
+    def get_weekly_summary(self, url_or_id):
+        if 'http' in url_or_id.lower():
+            soup = utils.get_soup(url_or_id)
+            if soup is not None:
+                return movie.Weekly(soup)
+            else:
+                print "Not able to parse url: " + url_or_id
+                pass
+        elif url_or_id in self.movie_urls.keys():
+            url = self.BOMURL + "/?page=weekly&id=" + url_or_id + ".htm"
+            soup = utils.get_soup(url)
+            if soup is not None:
+                return movie.Weekly(soup)
+            else:
+                print "Not able to parse url: " + url
+                pass
         else:
-            print "Invalid movie name or URL ", url_or_name
+            print "Invalid movie name or URL ", url_or_id
 
     def get_all_movies(self):
         for key, val in self.movie_urls.iteritems():
-            movie = self.get_movie_details(val)
+            movie = self.get_movie_details(key)
             movie.clean_data()
             print movie.to_json()
 
